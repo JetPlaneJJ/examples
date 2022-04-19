@@ -40,7 +40,8 @@ def run(model: str, camera_id: int, width: int, height: int, num_threads: int,
   start_time = time.time()
 
   # Start capturing video input from the camera
-  cap = cv2.VideoCapture(camera_id)
+#   cap = cv2.VideoCapture(camera_id)
+  cap = cv2.VideoCapture('nvarguscamerasrc ! video/x-raw(memory:NVMM), width=3280, height=2464, format=(string)NV12, framerate=(fraction)15/1 ! nvvidconv ! video/x-raw, format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink', cv2.CAP_GSTREAMER)
   cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
   cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
