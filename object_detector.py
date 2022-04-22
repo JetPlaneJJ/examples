@@ -42,44 +42,44 @@ except ImportError:
 class ObjectDetectorOptions(NamedTuple):
   u"""A config to initialize an object detector."""
 
-  enable_edgetpu: bool = False
+  enable_edgetpu = False
   u"""Enable the model to run on EdgeTPU."""
 
-  label_allow_list: List[unicode] = None
+  label_allow_list = None
   u"""The optional allow list of labels."""
 
-  label_deny_list: List[unicode] = None
+  label_deny_list = None
   u"""The optional deny list of labels."""
 
-  max_results: int = -1
+  max_results = -1
   u"""The maximum number of top-scored detection results to return."""
 
-  num_threads: int = 1
+  num_threads = 1
   u"""The number of CPU threads to be used."""
 
-  score_threshold: float = 0.0
+  score_threshold = 0.0
   u"""The score threshold of detection results to return."""
 
 
 class Rect(NamedTuple):
   u"""A rectangle in 2D space."""
-  left: float
-  top: float
-  right: float
-  bottom: float
+  left = 0.0
+  top = 0.0
+  right = 0.0
+  bottom =0.0
 
 
 class Category(NamedTuple):
   u"""A result of a classification task."""
-  label: unicode
-  score: float
-  index: int
+  label = None
+  score = None
+  index = 0
 
 
 class Detection(NamedTuple):
   u"""A detected object as the result of an ObjectDetector."""
-  bounding_box: Rect
-  categories: List[Category]
+  bounding_box = None
+  categories = None
 
 
 def edgetpu_lib_name():
