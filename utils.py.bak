@@ -11,9 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-u"""Utility functions to display the pose detection results."""
+"""Utility functions to display the pose detection results."""
 
-from __future__ import absolute_import
 from typing import List
 
 import cv2
@@ -28,10 +27,10 @@ _TEXT_COLOR = (0, 0, 255)  # red
 
 
 def visualize(
-    image,
-    detections,
-):
-  u"""Draws bounding boxes on the input image and return it.
+    image: np.ndarray,
+    detections: List[Detection],
+) -> np.ndarray:
+  """Draws bounding boxes on the input image and return it.
 
   Args:
     image: The input RGB image.
@@ -50,7 +49,7 @@ def visualize(
     category = detection.categories[0]
     class_name = category.label
     probability = round(category.score, 2)
-    result_text = class_name + u' (' + unicode(probability) + u')'
+    result_text = class_name + ' (' + str(probability) + ')'
     text_location = (_MARGIN + detection.bounding_box.left,
                      _MARGIN + _ROW_SIZE + detection.bounding_box.top)
     cv2.putText(image, result_text, text_location, cv2.FONT_HERSHEY_PLAIN,

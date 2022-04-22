@@ -11,10 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-u"""A module to run object detection with a TensorFlow Lite model."""
+"""A module to run object detection with a TensorFlow Lite model."""
 
-from __future__ import division
-from __future__ import absolute_import
 import json
 import platform
 from typing import List, NamedTuple
@@ -22,7 +20,6 @@ from typing import List, NamedTuple
 import cv2
 import numpy as np
 from tflite_support import metadata
-from itertools import ifilter
 
 # pylint: disable=g-import-not-at-top
 try:
@@ -40,29 +37,29 @@ except ImportError:
 
 
 class ObjectDetectorOptions(NamedTuple):
-  u"""A config to initialize an object detector."""
+  """A config to initialize an object detector."""
 
   enable_edgetpu: bool = False
-  u"""Enable the model to run on EdgeTPU."""
+  """Enable the model to run on EdgeTPU."""
 
-  label_allow_list: List[unicode] = None
-  u"""The optional allow list of labels."""
+  label_allow_list: List[str] = None
+  """The optional allow list of labels."""
 
-  label_deny_list: List[unicode] = None
-  u"""The optional deny list of labels."""
+  label_deny_list: List[str] = None
+  """The optional deny list of labels."""
 
   max_results: int = -1
-  u"""The maximum number of top-scored detection results to return."""
+  """The maximum number of top-scored detection results to return."""
 
   num_threads: int = 1
-  u"""The number of CPU threads to be used."""
+  """The number of CPU threads to be used."""
 
   score_threshold: float = 0.0
-  u"""The score threshold of detection results to return."""
+  """The score threshold of detection results to return."""
 
 
 class Rect(NamedTuple):
-  u"""A rectangle in 2D space."""
+  """A rectangle in 2D space."""
   left: float
   top: float
   right: float
@@ -70,41 +67,41 @@ class Rect(NamedTuple):
 
 
 class Category(NamedTuple):
-  u"""A result of a classification task."""
-  label: unicode
+  """A result of a classification task."""
+  label: str
   score: float
   index: int
 
 
 class Detection(NamedTuple):
-  u"""A detected object as the result of an ObjectDetector."""
+  """A detected object as the result of an ObjectDetector."""
   bounding_box: Rect
   categories: List[Category]
 
 
 def edgetpu_lib_name():
-  u"""Returns the library name of EdgeTPU in the current platform."""
+  """Returns the library name of EdgeTPU in the current platform."""
   return {
-      u'Darwin': u'libedgetpu.1.dylib',
-      u'Linux': u'libedgetpu.so.1',
-      u'Windows': u'edgetpu.dll',
+      'Darwin': 'libedgetpu.1.dylib',
+      'Linux': 'libedgetpu.so.1',
+      'Windows': 'edgetpu.dll',
   }.get(platform.system(), None)
 
 
-class ObjectDetector(object):
-  u"""A wrapper class for a TFLite object detection model."""
+class ObjectDetector:
+  """A wrapper class for a TFLite object detection model."""
 
-  _OUTPUT_LOCATION_NAME = u'location'
-  _OUTPUT_CATEGORY_NAME = u'category'
-  _OUTPUT_SCORE_NAME = u'score'
-  _OUTPUT_NUMBER_NAME = u'number of detections'
+  _OUTPUT_LOCATION_NAME = 'location'
+  _OUTPUT_CATEGORY_NAME = 'category'
+  _OUTPUT_SCORE_NAME = 'score'
+  _OUTPUT_NUMBER_NAME = 'number of detections'
 
   def __init__(
       self,
-      model_path,
-      options = ObjectDetectorOptions()
-  ):
-    u"""Initialize a TFLite object detection model.
+      model_path: str,
+      options: ObjectDetectorOptions = ObjectDetectorOptions()
+  ) -> None:
+    """Initialize a TFLite object detection model.
 
     Args:
         model_path: Path to the TFLite model.
@@ -120,27 +117,27 @@ class ObjectDetector(object):
 
     # Save model metadata for preprocessing later.
     model_metadata = json.loads(displayer.get_metadata_json())
-    process_units = model_metadata[u'subgraph_metadata'][0][
-        u'input_tensor_metadata'][0][u'process_units']
+    process_units = model_metadata['subgraph_metadata'][0][
+        'input_tensor_metadata'][0]['process_units']
     mean = 127.5
     std = 127.5
     for option in process_units:
-      if option[u'options_type'] == u'NormalizationOptions':
-        mean = option[u'options'][u'mean'][0]
-        std = option[u'options'][u'std'][0]
+      if option['options_type'] == 'NormalizationOptions':
+        mean = option['options']['mean'][0]
+        std = option['options']['std'][0]
     self._mean = mean
     self._std = std
 
     # Load label list from metadata.
     file_name = displayer.get_packed_associated_file_list()[0]
     label_map_file = displayer.get_associated_file_buffer(file_name).decode()
-    label_list = list(ifilter(len, label_map_file.splitlines()))
+    label_list = list(filter(len, label_map_file.splitlines()))
     self._label_list = label_list
 
     # Initialize TFLite model.
     if options.enable_edgetpu:
       if edgetpu_lib_name() is None:
-        raise OSError(u"The current OS isn't supported by Coral EdgeTPU.")
+        raise OSError("The current OS isn't supported by Coral EdgeTPU.")
       interpreter = Interpreter(
           model_path=model_path,
           experimental_delegates=[load_delegate(edgetpu_lib_name())],
@@ -164,7 +161,7 @@ class ObjectDetector(object):
     # because of the op's ports of TFLITE_DETECTION_POST_PROCESS
     # (https://github.com/tensorflow/tensorflow/blob/a4fe268ea084e7d323133ed7b986e0ae259a2bc7/tensorflow/lite/kernels/detection_postprocess.cc#L47-L50).
     sorted_output_indices = sorted(
-        [output[u'index'] for output in interpreter.get_output_details()])
+        [output['index'] for output in interpreter.get_output_details()])
     self._output_indices = {
         self._OUTPUT_LOCATION_NAME: sorted_output_indices[0],
         self._OUTPUT_CATEGORY_NAME: sorted_output_indices[1],
@@ -172,13 +169,13 @@ class ObjectDetector(object):
         self._OUTPUT_NUMBER_NAME: sorted_output_indices[3],
     }
 
-    self._input_size = input_detail[u'shape'][2], input_detail[u'shape'][1]
-    self._is_quantized_input = input_detail[u'dtype'] == np.uint8
+    self._input_size = input_detail['shape'][2], input_detail['shape'][1]
+    self._is_quantized_input = input_detail['dtype'] == np.uint8
     self._interpreter = interpreter
     self._options = options
 
-  def detect(self, input_image):
-    u"""Run detection on an input image.
+  def detect(self, input_image: np.ndarray) -> List[Detection]:
+    """Run detection on an input image.
 
     Args:
         input_image: A [height, width, 3] RGB image. Note that height and width
@@ -204,8 +201,8 @@ class ObjectDetector(object):
     return self._postprocess(boxes, classes, scores, count, image_width,
                              image_height)
 
-  def _preprocess(self, input_image):
-    u"""Preprocess the input image as required by the TFLite model."""
+  def _preprocess(self, input_image: np.ndarray) -> np.ndarray:
+    """Preprocess the input image as required by the TFLite model."""
 
     # Resize the input
     input_tensor = cv2.resize(input_image, self._input_size)
@@ -220,21 +217,21 @@ class ObjectDetector(object):
     return input_tensor
 
   def _set_input_tensor(self, image):
-    u"""Sets the input tensor."""
-    tensor_index = self._interpreter.get_input_details()[0][u'index']
+    """Sets the input tensor."""
+    tensor_index = self._interpreter.get_input_details()[0]['index']
     input_tensor = self._interpreter.tensor(tensor_index)()[0]
     input_tensor[:, :] = image
 
   def _get_output_tensor(self, name):
-    u"""Returns the output tensor at the given index."""
+    """Returns the output tensor at the given index."""
     output_index = self._output_indices[name]
     tensor = np.squeeze(self._interpreter.get_tensor(output_index))
     return tensor
 
-  def _postprocess(self, boxes, classes,
-                   scores, count, image_width,
-                   image_height):
-    u"""Post-process the output of TFLite model into a list of Detection objects.
+  def _postprocess(self, boxes: np.ndarray, classes: np.ndarray,
+                   scores: np.ndarray, count: int, image_width: int,
+                   image_height: int) -> List[Detection]:
+    """Post-process the output of TFLite model into a list of Detection objects.
 
     Args:
         boxes: Bounding boxes of detected objects from the TFLite model.
@@ -250,7 +247,7 @@ class ObjectDetector(object):
     results = []
 
     # Parse the model output into a list of Detection entities.
-    for i in xrange(count):
+    for i in range(count):
       if scores[i] >= self._options.score_threshold:
         y_min, x_min, y_max, x_max = boxes[i]
         bounding_box = Rect(
@@ -276,14 +273,14 @@ class ObjectDetector(object):
     filtered_results = sorted_results
     if self._options.label_deny_list is not None:
       filtered_results = list(
-          ifilter(
+          filter(
               lambda detection: detection.categories[0].label not in self.
               _options.label_deny_list, filtered_results))
 
     # Keep only detections in allow list
     if self._options.label_allow_list is not None:
       filtered_results = list(
-          ifilter(
+          filter(
               lambda detection: detection.categories[0].label in self._options.
               label_allow_list, filtered_results))
 
