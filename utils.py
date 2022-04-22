@@ -14,7 +14,6 @@
 u"""Utility functions to display the pose detection results."""
 
 from __future__ import absolute_import
-from typing import List
 
 import cv2
 import numpy as np
